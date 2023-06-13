@@ -1,66 +1,65 @@
-const users = require("../data/user.json");
+const User = require("./user");
 
 const BAD_CODE_ERROR = 400;
 
+const SUCCESS_RES = 200;
+
 const ERRORS = {
-  email: "Email invalide",
-  name: "Nom d'utilisateur invalide",
+  username: "Email invalide",
+  logName: "Nom d'utilisateur invalide",
   password: "Mot de passe incorrect",
   desk: "Désk invalide",
+  profile: "Profile invalide",
+  userInExist: "Invalide id",
 };
 
 class Auth {
   constructor() {
-    this.users = users;
+    this.loggedUsers = [];
+    this.users = [];
   }
 
-  get allUsers() {
-    return {
-      code: 200,
-      value: this.users.map((user) => {
-        const userRow = { ...user };
+  async allUsers() {
+    const users = await User.find({});
 
-        delete userRow.password;
+    return {
+      code: SUCCESS_RES,
+      value: users.map((user) => {
+        const userRow = { ...user._doc };
 
         return userRow;
       }),
     };
   }
 
-  createUser(email, name, desk, password) {
-    const newUser = { id: this.users.length + 1, email, name, desk, password };
+  getRandomNumberFromArray(array) {
+    // Generate a random index within the range of the array length
+    const randomIndex = Math.floor(Math.random() * array.length);
 
-    if (!email) {
+    // Return the element at the randomly generated index
+    return array[randomIndex];
+  }
+
+  async createUser(username, logName, password, role = "agent") {
+    if (!username) {
       return {
         code: BAD_CODE_ERROR,
         errors: [
           {
-            name: "email",
-            errors: [ERRORS.email],
+            name: "username",
+            errors: [ERRORS.username],
           },
         ],
       };
     }
 
-    if (!name) {
+    if (!logName) {
       return {
         code: BAD_CODE_ERROR,
         errors: [
           {
-            name: "name",
-            errors: [ERRORS.name],
-          },
-        ],
-      };
-    }
-
-    if (!desk) {
-      return {
-        code: BAD_CODE_ERROR,
-        errors: [
-          {
-            name: "desk",
-            errors: [ERRORS.desk],
+            name: "logName",
+            errors: [ERRORS.logName],
           },
         ],
       };
@@ -78,47 +77,225 @@ class Auth {
       };
     }
 
-    this.user.push(newUser);
+    const newUser = { username, logName, role };
 
-    delete newUser.password;
+    try {
+      await User.register(
+        new User({
+          username,
+          logName,
+          role,
+        }),
+        password
+      );
 
-    return {
-      code: 200,
-      value: newUser,
-    };
-  }
-
-  login(email, password) {
-    const user = this.users.find((user) => user.email === email);
-    const passwordError = {
-      name: "password",
-      errors: [ERRORS.password],
-    };
-
-    if (!user) {
+      return {
+        code: SUCCESS_RES,
+        value: newUser,
+      };
+    } catch (error) {
+      console.log(error);
       return {
         code: BAD_CODE_ERROR,
         errors: [
           {
-            name: "email",
-            errors: [ERRORS.email],
+            name: "username",
+            errors: [ERRORS.username],
           },
-          passwordError,
+          {
+            name: "password",
+            errors: [ERRORS.password],
+          },
+        ],
+      };
+    }
+  }
+
+  loginFailed() {
+    return {
+      code: BAD_CODE_ERROR,
+      errors: [
+        {
+          name: "username",
+          errors: [ERRORS.username],
+        },
+        {
+          name: "password",
+          errors: [ERRORS.password],
+        },
+      ],
+    };
+  }
+
+  assignDesk() {
+    const deskNumbersAssigned = this.loggedUsers.map((usr) => usr.desk);
+
+    const totalDeskNumbers = Array.from(
+      String(process.env.TOTAL_DESKS),
+      Number
+    );
+
+    const filteredArrayDesk = totalDeskNumbers.filter(
+      (num) => !deskNumbersAssigned.includes(num)
+    );
+
+    if (!filteredArrayDesk.length) {
+      return null;
+    }
+
+    return this.getRandomNumberFromArray(filteredArrayDesk);
+  }
+
+  getAuthenticatedUser(authUser, isAuthenticated) {
+    if (!isAuthenticated) {
+      if (authUser && Object.keys(authUser).length) {
+        this.loggedUsers.filter((usr) => usr.username !== authUser.username);
+      }
+
+      return {
+        code: BAD_CODE_ERROR,
+        errors: [
+          {
+            name: "profile",
+            errors: [ERRORS.profile],
+          },
         ],
       };
     }
 
-    if (user.password !== password) {
+    const existedUser = this.loggedUsers.find(
+      (user) => user.username === authUser.username
+    );
+
+    if (existedUser) {
       return {
-        code: BAD_CODE_ERROR,
-        errors: [passwordError],
+        code: SUCCESS_RES,
+        value: existedUser,
       };
     }
 
-    return {
-      code: 200,
-      value: user,
+    const randomDeskNumber = this.assignDesk();
+
+    if (!randomDeskNumber) {
+      return {
+        code: BAD_CODE_ERROR,
+        errors: [{ name: "desk", errors: [ERRORS.desk] }],
+      };
+    }
+
+    const authenticatedUser = {
+      username: authUser.username,
+      logName: authUser.logName,
+      role: authUser.role,
+      desk: randomDeskNumber,
     };
+
+    this.loggedUsers.push(authenticatedUser);
+
+    return {
+      code: SUCCESS_RES,
+      value: authenticatedUser,
+    };
+  }
+
+  login(user) {
+    const existedUser = this.getAuthenticatedUser(user, true);
+
+    if (existedUser) return existedUser;
+
+    const randomDeskNumber = this.assignDesk();
+
+    if (!randomDeskNumber) {
+      return {
+        code: BAD_CODE_ERROR,
+        errors: [{ name: "desk", errors: [ERRORS.desk] }],
+      };
+    }
+
+    const updatedUser = {
+      username: user.username,
+      role: user.role,
+      logName: user.logName,
+      desk: randomDeskNumber,
+    };
+
+    this.loggedUsers.push(updatedUser);
+
+    return {
+      code: SUCCESS_RES,
+      value: updatedUser,
+    };
+  }
+
+  async getUser(id) {
+    try {
+      const user = await User.findById(id);
+
+      if (!user) {
+        return {
+          code: BAD_CODE_ERROR,
+          errors: [{ name: "userInExist", errors: [ERRORS.userInExist] }],
+        };
+      }
+
+      return {
+        code: SUCCESS_RES,
+        value: user,
+      };
+    } catch (error) {
+      return {
+        code: BAD_CODE_ERROR,
+        errors: [{ name: "userInExist", errors: [ERRORS.userInExist] }],
+      };
+    }
+  }
+
+  async deleteUser(id) {
+    try {
+      const deletedUser = await User.findByIdAndRemove(id);
+
+      if (!deletedUser) {
+        return {
+          code: BAD_CODE_ERROR,
+          errors: [{ name: "userInExist", errors: [ERRORS.userInExist] }],
+        };
+      }
+
+      return {
+        code: SUCCESS_RES,
+        value: deletedUser,
+      };
+    } catch (error) {
+      return {
+        code: BAD_CODE_ERROR,
+        errors: [{ name: "userInExist", errors: [ERRORS.userInExist] }],
+      };
+    }
+  }
+
+  async updateUser(userData) {
+    try {
+      const updatedUser = await User.findByIdAndUpdate(userData.id, userData, {
+        new: true,
+      });
+
+      if (!updatedUser) {
+        return {
+          code: BAD_CODE_ERROR,
+          errors: [{ name: "userInExist", errors: [ERRORS.userInExist] }],
+        };
+      }
+
+      return {
+        code: SUCCESS_RES,
+        value: updatedUser,
+      };
+    } catch (error) {
+      return {
+        code: BAD_CODE_ERROR,
+        errors: [{ name: "userInExist", errors: [ERRORS.userInExist] }],
+      };
+    }
   }
 }
 
