@@ -4,7 +4,7 @@ import { Form, Input, Button } from "antd";
 import { LockOutlined } from "@ant-design/icons";
 
 import { useHideMenu } from "../hooks/useHideMenu";
-import { getUserStorage } from "../helpers/getUserStorage";
+import { getUserProfile } from "../helpers/auth";
 import { login } from "../helpers/auth";
 
 export const Login = () => {
@@ -26,25 +26,24 @@ export const Login = () => {
     const fieldErrors = [];
 
     // Compare user info
-    if (!email) {
-      // Invalid password
+
+    // Invalid password
+    !email &&
       errors.push([
         {
           name: "email",
           errors: [errors.email],
         },
       ]);
-    }
 
-    if (!password) {
-      // Invalid password
+    // Invalid password
+    !password &&
       errors.push([
         {
           name: "password",
           errors: [errors.password],
         },
       ]);
-    }
 
     setIsLoading(true);
 
@@ -56,20 +55,11 @@ export const Login = () => {
       Array.isArray(userData) &&
       userData?.some((user) => user.errors.length > 0);
 
-    if (hasErrors) {
-      fieldErrors.push(...userData);
-    }
+    if (hasErrors) fieldErrors.push(...userData);
 
     if (fieldErrors.length > 0) return ref.current?.setFields(fieldErrors);
 
-    localStorage.setItem("agent", userData.name);
-    localStorage.setItem("desk", userData.desk);
-    localStorage.setItem("email", userData.email);
-    userData.role && localStorage.setItem("role", userData.role);
-
-    if (userData?.role === "admin") {
-      return history.push("/line");
-    }
+    if (userData?.role === "admin") return history.push("/line");
 
     history.push("/desk");
   };
@@ -88,13 +78,21 @@ export const Login = () => {
     ]);
   };
 
-  useEffect(() => {
-    const userData = getUserStorage();
+  async function init() {
+    setIsLoading(true);
 
-    if (!userData?.agent) return;
+    const userData = await getUserProfile();
+
+    setIsLoading(false);
+
+    if (!userData?.role) return;
 
     history.push(userData.role ? "/line" : "/desk");
-  }, [history]);
+  }
+
+  useEffect(() => {
+    init();
+  }, []);
 
   return (
     <div className="login-container">

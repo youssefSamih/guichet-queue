@@ -2,14 +2,33 @@ var fs = require("fs");
 
 const Ticket = require("./ticket");
 
+const TicketModel = require("./ticket-schema");
+
 // const ticketJsonData = require("../data/ticket-data.json");
 
 class TicketList {
   constructor() {
     this.lastNumber = 0;
 
+    this.getLatestTicket();
+
     this.patients = [];
     this.assigned = [];
+  }
+
+  async getLatestTicket() {
+    try {
+      const latestTicket = await TicketModel.find({})
+        .select("numero")
+        .sort({ date: -1 })
+        .limit(1);
+
+      if (latestTicket?.length) {
+        this.lastNumber = latestTicket[0].numero;
+      }
+    } catch (error) {
+      this.lastNumber = 0;
+    }
   }
 
   get nextNumber() {
@@ -30,18 +49,22 @@ class TicketList {
     return newTicket;
   }
 
-  assignTicket(agent, desk) {
+  assignTicket(userData) {
     if (this.patients.length === 0) {
       return null;
     }
 
     const nextTicket = this.patients.shift();
 
-    nextTicket.agent = agent;
+    nextTicket.agent = userData.id;
 
-    nextTicket.desk = desk;
+    nextTicket.desk = userData.desk;
 
-    this.assigned.unshift(nextTicket);
+    const ticket = new TicketModel(nextTicket);
+
+    ticket.save();
+
+    this.assigned.unshift({ ...nextTicket, logName: userData?.logName });
 
     return nextTicket;
   }

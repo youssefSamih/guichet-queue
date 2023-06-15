@@ -5,7 +5,6 @@ import { SaveOutlined } from "@ant-design/icons";
 import { Redirect, useHistory } from "react-router-dom";
 
 import { useHideMenu } from "../hooks/useHideMenu";
-import { getUserStorage } from "../helpers/getUserStorage";
 
 const { Title, Text } = Typography;
 
@@ -20,7 +19,9 @@ const tailLayout = {
 
 export const Enter = () => {
   const history = useHistory();
-  const [userData] = useState(getUserStorage());
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState();
 
   useHideMenu(false);
 
@@ -35,7 +36,19 @@ export const Enter = () => {
     console.log("Failed:", errorInfo);
   };
 
-  if (userData.agent && userData.desk) {
+  async function init() {
+    const user = await getUserProfile();
+
+    setUserData(user);
+
+    setIsLoading(false);
+  }
+
+  useEffect(() => {
+    init();
+  }, []);
+
+  if (!isLoading && userData?.id && userData?.desk) {
     return <Redirect to="/desk" />;
   }
 

@@ -6,19 +6,20 @@ import { Redirect, useHistory } from "react-router-dom";
 import { SocketContext } from "../context/SocketContext";
 import { useHideMenu } from "../hooks/useHideMenu";
 
-import { getUserStorage } from "../helpers/getUserStorage";
+import { getUserProfile } from "../helpers/auth";
 
 const { Title, Text } = Typography;
 
 export const Desk = () => {
   const [hideMenu, setHideMenu] = useState(true);
 
+  const history = useHistory();
   useHideMenu(hideMenu);
 
-  const [userData] = useState(getUserStorage());
+  const [userData, setUserData] = useState();
+  const [isLoading, setIsLoading] = useState(true);
   const { socket } = useContext(SocketContext);
   const [ticket, setTicket] = useState(null);
-  const history = useHistory();
 
   const signout = () => {
     localStorage.clear();
@@ -32,13 +33,21 @@ export const Desk = () => {
     });
   };
 
-  useEffect(() => {
-    const userStorage = getUserStorage();
+  async function init() {
+    const user = await getUserProfile();
 
-    setHideMenu(userStorage.role !== "admin");
+    setHideMenu(user.role !== "admin");
+
+    setUserData(user);
+
+    setIsLoading(false);
+  }
+
+  useEffect(() => {
+    init();
   }, []);
 
-  if (!userData.agent || !userData.desk) {
+  if (!isLoading && (!userData?.username || !userData?.desk)) {
     return <Redirect to="/login" />;
   }
 
@@ -46,9 +55,9 @@ export const Desk = () => {
     <>
       <Row>
         <Col span={20}>
-          <Title level={2}>{userData.agent}</Title>
+          <Title level={2}>{userData?.logName}</Title>
           <Text>Vous travaillez sur le bureau: </Text>
-          <Text type="success"> {userData.desk} </Text>
+          <Text type="success"> {userData?.desk} </Text>
         </Col>
 
         <Col span={4} align="right">

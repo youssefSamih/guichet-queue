@@ -11,11 +11,13 @@ const LocalStrategy = require("passport-local").Strategy;
 const MongoStore = require("connect-mongo");
 const mongoose = require("mongoose");
 
+const upload = require("./storage");
 const Sockets = require("./sockets");
 const Auth = require("./auth");
 const User = require("./user");
+const Photos = require("./photos");
 
-const mongoString = "mongodb://localhost:27017/guichet";
+const mongoString = process.env.DB;
 mongoose.connect(mongoString);
 
 class Server {
@@ -24,13 +26,16 @@ class Server {
     this.port = process.env.PORT;
     this.secret = process.env.SECRET_KEY;
     this.db = mongoose.connection;
+    this.photos = new Photos();
 
     // Http server
     this.server = http.createServer(this.app);
 
     // socket configurations
     this.io = socketio(this.server, {
-      /* settings */
+      origin: process.env.ORIGIN_CLIENT,
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE"],
     });
 
     // initialize sockets
@@ -68,7 +73,13 @@ class Server {
     this.app.use(express.urlencoded({ extended: true }));
 
     // Configure cors
-    this.app.use(cors());
+    this.app.use(
+      cors({
+        origin: process.env.ORIGIN_CLIENT,
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE"],
+      })
+    );
 
     // Get last tickets
     this.app.get("/last-tickets", (req, res) => {
@@ -114,7 +125,7 @@ class Server {
         successRedirect: "/login-success",
       }),
       (err, req, res, next) => {
-        next();
+        if (err) next(err);
       }
     );
 
@@ -147,14 +158,62 @@ class Server {
 
       res.status(user.code).json(user.value || user.errors);
     });
+
+    this.app.post("/logout", (req, res) => {
+      req.logout((err) => {
+        if (err) return next(err);
+
+        req.session.destroy((err) => {
+          if (err) {
+            res.status(500).json({ message: "Error logging out" });
+          } else {
+            res.status(200).json({ message: "Logged out successfully" });
+          }
+        });
+      });
+    });
+
+    this.app.post("/upload", upload.single("file"), async (req, res) => {
+      const uploadedFile = this.photos.uploadImage(req.file);
+
+      return res
+        .status(uploadedFile.code)
+        .send(uploadedFile.errors || uploadedFile.value);
+    });
+  }
+
+  async createAdminUser() {
+    try {
+      const adminUser = await User.findByUsername(process.env.ADMIN_EMAIL);
+
+      if (!adminUser) {
+        await this.auth.createUser(
+          process.env.ADMIN_EMAIL,
+          process.env.ADMIN_LOG_NAME,
+          process.env.ADMIN_PASSWORD,
+          "admin"
+        );
+      }
+
+      if (adminUser?._doc?.role === "agent") {
+        await User.findByIdAndUpdate(adminUser._id, {
+          ...adminUser._doc,
+          role: "admin",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   execute() {
-    // Inicializar Middlewares
+    // Initialize Middlewares
     this.middlewares();
 
-    // Inicializar Server
-    this.server.listen(this.port, () => {
+    // Initialize Server
+    this.server.listen(this.port, async () => {
+      await this.createAdminUser();
+
       console.log("Server running on port:", this.port);
     });
   }

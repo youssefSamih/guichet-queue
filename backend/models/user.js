@@ -8,7 +8,15 @@ const UserSchema = new Schema({
     required: true,
     unique: true,
   },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   logName: {
+    type: String,
+  },
+  imgProfile: {
     type: String,
   },
   role: {

@@ -3,15 +3,21 @@ import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Redirect } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 
-import { getUserStorage } from "../helpers/getUserStorage";
-import { getAllUsers } from "../helpers/auth";
+import { createUser, deleteUser, updateUser } from "../helpers/users";
+import { getUserProfile, getAllUsers } from "../helpers/auth";
 
 export const Users = () => {
+  const [form] = Form.useForm();
+
   const [users, setUsers] = useState([]);
 
   const [isMounted, setIsMounted] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const [deleteId, setDeleteId] = useState();
+
+  const [userEdit, setUserEdit] = useState();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -20,18 +26,13 @@ export const Users = () => {
   const columns = [
     {
       title: "Name",
-      dataIndex: "name",
-      key: "name",
+      dataIndex: "logName",
+      key: "logName",
     },
     {
       title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: "Bureau",
-      dataIndex: "desk",
-      key: "desk",
+      dataIndex: "username",
+      key: "username",
     },
     {
       title: "Action",
@@ -42,26 +43,115 @@ export const Users = () => {
 
   const dataSource = users.map((user) => ({
     ...user,
-    key: user.id,
+    logName:
+      user.username === loggedUser?.username
+        ? `${user.logName} (vous)`
+        : user.logName,
+    key: user._id,
     action: (
       <Space wrap>
+        {user.username !== loggedUser?.username &&
+        loggedUser?.role === "admin" ? (
+          <Button
+            danger
+            loading={isLoading && deleteId}
+            disabled={isLoading}
+            onClick={() => onDelete(user._id)}
+            shape="circle"
+            type="primary"
+            icon={<DeleteOutlined />}
+          />
+        ) : undefined}
+
         <Button
-          danger
+          ghost
+          disabled={isLoading}
+          onClick={() => onEdit(user)}
           shape="circle"
           type="primary"
-          icon={<DeleteOutlined />}
+          icon={<EditOutlined />}
         />
-        <Button ghost shape="circle" type="primary" icon={<EditOutlined />} />
       </Space>
     ),
   }));
 
+  async function onEdit(userData) {
+    setUserEdit(userData);
+
+    setIsModalOpen(true);
+
+    form.setFieldsValue({
+      username: userData.logName,
+      email: userData.username,
+    });
+  }
+
+  async function onDelete(id) {
+    setIsLoading(true);
+
+    setDeleteId(id);
+
+    const user = await deleteUser(id);
+
+    const hasErrors =
+      Array.isArray(user) && user?.some((usr) => usr.errors.length > 0);
+
+    !hasErrors &&
+      setUsers((prevState) => prevState.filter((usr) => usr._id !== id));
+
+    setDeleteId(undefined);
+
+    setIsLoading(false);
+  }
+
   function onOpenModal(params) {
+    userEdit && setUserEdit(undefined);
+
+    userEdit && form.setFieldsValue({ username: "", email: "", password: "" });
+
     setIsModalOpen(true);
   }
 
-  function handleOk() {
-    setIsModalOpen(false);
+  async function onFinish(values) {
+    setIsLoading(true);
+
+    const user = userEdit
+      ? await updateUser({
+          id: userEdit._id,
+          username: values.email,
+          logName: values.username,
+          password: values.password,
+        })
+      : await createUser(values.username, values.email, values.password);
+
+    const hasErrors =
+      Array.isArray(user) && user?.some((usr) => usr.errors.length > 0);
+
+    hasErrors && form.setFields(user);
+
+    !hasErrors && setIsModalOpen(false);
+
+    !hasErrors && !userEdit && setUsers((prevState) => [...prevState, user]);
+
+    !hasErrors && userEdit && setUserEdit(undefined);
+
+    !hasErrors &&
+      userEdit &&
+      setUsers((prevState) =>
+        prevState.map((user) => {
+          if (user._id === userEdit._id) {
+            return {
+              _id: user._id,
+              logName: values.username,
+              username: values.username,
+            };
+          }
+
+          return user;
+        })
+      );
+
+    setIsLoading(false);
   }
 
   function handleCancel() {
@@ -69,16 +159,21 @@ export const Users = () => {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  async function init(actualUser) {
+  async function init() {
     setIsLoading(true);
+
+    const userData = await getUserProfile();
+
+    userData?.username && setLoggedUser(userData);
 
     const users = await getAllUsers();
 
-    const filteredUsers = users?.filter(
-      (user) => user.email !== actualUser?.email
-    );
-
-    filteredUsers && setUsers(filteredUsers);
+    users &&
+      setUsers(
+        userData?.role === "admin"
+          ? users
+          : users.filter((user) => user._id === userData?.id)
+      );
 
     setIsLoading(false);
   }
@@ -88,46 +183,36 @@ export const Users = () => {
 
     setIsMounted(true);
 
-    const userStorage = getUserStorage();
-
-    userStorage && setLoggedUser(userStorage);
-
-    init(userStorage);
+    init();
   }, [init, isMounted]);
 
-  if (isMounted && !loggedUser?.role) {
+  if (!isLoading && isMounted && !loggedUser?.role) {
     return <Redirect to="/login" />;
   }
 
   return (
     <>
       <Modal
-        title="Ajouter un utilisateur"
+        title={
+          userEdit ? `Modifier ${userEdit.logName}` : "Ajouter un utilisateur"
+        }
         open={isModalOpen}
-        onOk={handleOk}
+        onOk={form.submit}
         onCancel={handleCancel}
+        confirmLoading={isLoading}
         cancelText="Annuler"
-        okText="Ajouter"
+        okText={userEdit ? "Modifier" : "Ajouter"}
       >
         <Form
+          autoComplete="off"
+          form={form}
           name="basic"
-          // ref={ref}
           className="form"
-          onFinish={() => {}}
-          onFinishFailed={() => {}}
+          onFinish={onFinish}
         >
           <Form.Item
             label="Nom d'utilisateur"
             name="username"
-            className="input-container"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="Bureau"
-            name="desk"
             className="input-container"
             rules={[{ required: true }]}
           >
@@ -140,22 +225,24 @@ export const Users = () => {
             className="input-container"
             rules={[{ required: true }]}
           >
-            <Input />
+            <Input disabled={!!userEdit} />
           </Form.Item>
 
-          <Form.Item
-            label="Mot de passe"
-            name="password"
-            type="password"
-            className="input-container"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
+          {!userEdit ? (
+            <Form.Item
+              label="Mot de passe"
+              name="password"
+              type="password"
+              className="input-container"
+              rules={[{ required: !userEdit }]}
+            >
+              <Input type="password" />
+            </Form.Item>
+          ) : undefined}
         </Form>
       </Modal>
 
-      <Button onClick={onOpenModal} type="primary">
+      <Button loading={isLoading} onClick={onOpenModal} type="primary">
         Ajouter un utilisateur
       </Button>
 

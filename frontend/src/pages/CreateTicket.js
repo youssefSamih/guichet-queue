@@ -4,8 +4,7 @@ import { DownloadOutlined } from "@ant-design/icons";
 
 import { useHideMenu } from "../hooks/useHideMenu";
 import { SocketContext } from "../context/SocketContext";
-
-import { getUserStorage } from "../helpers/getUserStorage";
+import { getUserProfile } from "../helpers/auth";
 
 const { Title, Text } = Typography;
 
@@ -23,10 +22,14 @@ export const CreateTicket = () => {
     });
   };
 
-  useEffect(() => {
-    const userStorage = getUserStorage();
+  async function init() {
+    const userData = await getUserProfile();
 
-    setHideMenu(userStorage.role !== "admin");
+    setHideMenu(userData?.role !== "admin");
+  }
+
+  useEffect(() => {
+    init();
   }, []);
 
   return (

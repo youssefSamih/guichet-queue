@@ -18,14 +18,20 @@ class Sockets {
       socket.on("request-ticket", (data, callback) => {
         const newTicket = this.ticketList.createTicket();
         callback(newTicket);
-        console.log(newTicket);
       });
 
-      socket.on("next-ticket-work", ({ agent, desk }, callback) => {
-        const suTicket = this.ticketList.assignTicket(agent, desk);
+      socket.on("next-ticket-work", (userData, callback) => {
+        const suTicket = this.ticketList.assignTicket(userData);
+
         callback(suTicket);
-        console.log(suTicket);
-        this.io.emit("ticket-assigned", this.ticketList.lastTickets);
+
+        this.io.emit(
+          "ticket-assigned",
+          this.ticketList.lastTickets.map((ticket) => ({
+            ...ticket,
+            logName: userData?.logName,
+          }))
+        );
       });
     });
   }

@@ -77,30 +77,36 @@ class Auth {
       };
     }
 
-    const newUser = { username, logName, role };
-
     try {
-      await User.register(
+      const newUser = await User.register(
         new User({
           username,
           logName,
           role,
+          email: username,
         }),
         password
       );
+
+      delete newUser.hash;
+
+      delete newUser.salt;
 
       return {
         code: SUCCESS_RES,
         value: newUser,
       };
     } catch (error) {
-      console.log(error);
       return {
         code: BAD_CODE_ERROR,
         errors: [
           {
-            name: "username",
+            name: "email",
             errors: [ERRORS.username],
+          },
+          {
+            name: "username",
+            errors: [ERRORS.logName],
           },
           {
             name: "password",
@@ -149,7 +155,7 @@ class Auth {
   getAuthenticatedUser(authUser, isAuthenticated) {
     if (!isAuthenticated) {
       if (authUser && Object.keys(authUser).length) {
-        this.loggedUsers.filter((usr) => usr.username !== authUser.username);
+        this.loggedUsers.filter((usr) => usr?.username !== authUser?.username);
       }
 
       return {
@@ -164,7 +170,7 @@ class Auth {
     }
 
     const existedUser = this.loggedUsers.find(
-      (user) => user.username === authUser.username
+      (user) => user.username === authUser?.username
     );
 
     if (existedUser) {
@@ -184,6 +190,7 @@ class Auth {
     }
 
     const authenticatedUser = {
+      id: authUser._id,
       username: authUser.username,
       logName: authUser.logName,
       role: authUser.role,
@@ -201,7 +208,7 @@ class Auth {
   login(user) {
     const existedUser = this.getAuthenticatedUser(user, true);
 
-    if (existedUser) return existedUser;
+    if (existedUser.code === SUCCESS_RES) return existedUser;
 
     const randomDeskNumber = this.assignDesk();
 
@@ -217,6 +224,7 @@ class Auth {
       role: user.role,
       logName: user.logName,
       desk: randomDeskNumber,
+      id: user._id,
     };
 
     this.loggedUsers.push(updatedUser);
@@ -275,6 +283,12 @@ class Auth {
 
   async updateUser(userData) {
     try {
+      if (userData?.username === process.env.ADMIN_EMAIL) {
+        throw new Error("user admin from config");
+
+        return;
+      }
+
       const updatedUser = await User.findByIdAndUpdate(userData.id, userData, {
         new: true,
       });

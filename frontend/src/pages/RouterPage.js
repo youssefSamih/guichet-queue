@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Layout, Menu } from "antd";
 import {
   UserOutlined,
@@ -20,7 +20,7 @@ import { Line } from "./Line";
 import { CreateTicket } from "./CreateTicket";
 import { Desk } from "./Desk";
 import { UiContext } from "../context/UiContext";
-import { getUserStorage } from "../helpers/getUserStorage";
+import { logout, getUserProfile } from "../helpers/auth";
 import { Users } from "./Users";
 
 const { Sider, Content } = Layout;
@@ -28,13 +28,23 @@ const { Sider, Content } = Layout;
 export const RouterPage = () => {
   const { ocultarMenu } = useContext(UiContext);
 
-  const isAdmin = !!getUserStorage()?.role;
+  const [isAdmin, setIsAdmin] = useState(true);
 
-  const signout = () => {
-    localStorage.clear();
+  const signout = async () => {
+    await logout();
 
     window.location.reload();
   };
+
+  async function init() {
+    const user = await getUserProfile();
+
+    setIsAdmin(user?.role === "admin");
+  }
+
+  useEffect(() => {
+    init();
+  }, []);
 
   return (
     <Router>
