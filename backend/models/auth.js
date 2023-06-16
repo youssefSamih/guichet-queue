@@ -40,7 +40,13 @@ class Auth {
     return array[randomIndex];
   }
 
-  async createUser(username, logName, password, role = "agent") {
+  async createUser({
+    username,
+    logName,
+    password,
+    imgProfile,
+    role = "agent",
+  }) {
     if (!username) {
       return {
         code: BAD_CODE_ERROR,
@@ -84,6 +90,7 @@ class Auth {
           logName,
           role,
           email: username,
+          imgProfile,
         }),
         password
       );
@@ -194,6 +201,7 @@ class Auth {
       username: authUser.username,
       logName: authUser.logName,
       role: authUser.role,
+      imgProfile: authUser.imgProfile,
       desk: randomDeskNumber,
     };
 

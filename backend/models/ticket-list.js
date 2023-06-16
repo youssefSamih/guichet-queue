@@ -64,7 +64,11 @@ class TicketList {
 
     ticket.save();
 
-    this.assigned.unshift({ ...nextTicket, logName: userData?.logName });
+    this.assigned.unshift({
+      ...nextTicket,
+      logName: userData?.logName,
+      imgProfile: userData?.imgProfile,
+    });
 
     return nextTicket;
   }

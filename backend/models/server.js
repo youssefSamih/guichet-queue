@@ -16,6 +16,7 @@ const Sockets = require("./sockets");
 const Auth = require("./auth");
 const User = require("./user");
 const Photos = require("./photos");
+const Image = require("./image-schema");
 
 const mongoString = process.env.DB;
 mongoose.connect(mongoString);
@@ -98,11 +99,12 @@ class Server {
     this.app.post("/create-user", async (req, res) => {
       const newUser = req.body;
 
-      const user = await this.auth.createUser(
-        newUser.username,
-        newUser.logName,
-        newUser.password
-      );
+      const user = await this.auth.createUser({
+        username: newUser.username,
+        logName: newUser.logName,
+        password: newUser.password,
+        imgProfile: newUser.imgProfile,
+      });
 
       res.status(user.code).json(user.value || user.errors);
     });
@@ -174,11 +176,28 @@ class Server {
     });
 
     this.app.post("/upload", upload.single("file"), async (req, res) => {
-      const uploadedFile = this.photos.uploadImage(req.file);
+      const uploadedFile = await this.photos.uploadImage(req.file);
 
       return res
         .status(uploadedFile.code)
         .send(uploadedFile.errors || uploadedFile.value);
+    });
+
+    this.app.get("/file/:id", async (req, res) => {
+      const image = await this.photos.getImage(req.params.id);
+
+      image.errors && res.status(image.code).json(image.errors);
+
+      image.value &&
+        res.status(image.code).sendFile(path.join(__dirname, `../${image.value.path}`));
+    });
+
+    this.app.delete("/file/:id", async (req, res) => {
+      const file = await this.photos.deleteImage(req.params.id);
+
+      console.log(file);
+
+      res.status(file.code).json({});
     });
   }
 
