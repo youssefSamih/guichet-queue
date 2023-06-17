@@ -1,6 +1,16 @@
 import React, { useContext, useEffect, useState } from "react";
 
-import { Col, Row, Typography, List, Card, Tag, Divider } from "antd";
+import {
+  Col,
+  Row,
+  Typography,
+  List,
+  Card,
+  Tag,
+  Divider,
+  Avatar,
+  Space,
+} from "antd";
 
 import { SocketContext } from "../context/SocketContext";
 import { useHideMenu } from "../hooks/useHideMenu";
@@ -72,7 +82,15 @@ export const Line = () => {
                       <Tag color="magenta"> Bureau: {item.desk} </Tag>,
                     ]}
                   >
-                    <Title> No. {item.numero}</Title>
+                    <Space wrap size={16}>
+                      <Avatar
+                        size={70}
+                        src={item?.imgProfile || ""}
+                        style={{ marginRight: 10 }}
+                      />
+
+                      <Title> No. {item.numero}</Title>
+                    </Space>
                   </Card>
                 </List.Item>
               );

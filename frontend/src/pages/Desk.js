@@ -1,28 +1,74 @@
 import React, { useContext, useState, useEffect } from "react";
-import { Row, Col, Typography, Button, Divider } from "antd";
-import { CloseCircleOutlined, RightOutlined } from "@ant-design/icons";
+import { Row, Col, Typography, Button, Divider, Form, Avatar } from "antd";
+import {
+  CloseCircleOutlined,
+  RightOutlined,
+  ProfileOutlined,
+} from "@ant-design/icons";
 import { Redirect, useHistory } from "react-router-dom";
 
 import { SocketContext } from "../context/SocketContext";
 import { useHideMenu } from "../hooks/useHideMenu";
 
-import { getUserProfile } from "../helpers/auth";
+import { getUserProfile, logout } from "../helpers/auth";
+import { updateUser } from "../helpers/users";
+import { UserForm } from "./user-form";
 
 const { Title, Text } = Typography;
 
 export const Desk = () => {
+  const [form] = Form.useForm();
+
   const [hideMenu, setHideMenu] = useState(true);
 
   const history = useHistory();
+
   useHideMenu(hideMenu);
 
   const [userData, setUserData] = useState();
+
   const [isLoading, setIsLoading] = useState(true);
+
   const { socket } = useContext(SocketContext);
+
   const [ticket, setTicket] = useState(null);
 
-  const signout = () => {
-    localStorage.clear();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  async function onFinish(values) {
+    if (!userData) return;
+
+    const user = await updateUser({
+      id: userData.id,
+      username: values.email,
+      logName: values.username,
+      password: values.password,
+      images: values.image,
+    });
+
+    const hasErrors =
+      Array.isArray(user) && user?.some((usr) => usr.errors.length > 0);
+
+    hasErrors && form.setFields(user);
+
+    !hasErrors && setIsModalOpen(false);
+
+    !hasErrors &&
+      userData &&
+      setUserData((prevState) => ({
+        ...prevState,
+        ...user,
+      }));
+
+    setIsLoading(false);
+  }
+
+  function handleCancel() {
+    setIsModalOpen(false);
+  }
+
+  const signout = async () => {
+    await logout();
 
     history.replace("/login");
   };
@@ -32,6 +78,18 @@ export const Desk = () => {
       setTicket(ticket);
     });
   };
+
+  function onOpenModal() {
+    if (!userData) return;
+
+    form.setFieldsValue({
+      username: userData.logName,
+      email: userData.username,
+      image: undefined,
+    });
+
+    setIsModalOpen(true);
+  }
 
   async function init() {
     const user = await getUserProfile();
@@ -53,17 +111,52 @@ export const Desk = () => {
 
   return (
     <>
+      <UserForm
+        form={form}
+        isModalOpen={isModalOpen}
+        userEdit={userData}
+        onFinish={onFinish}
+        handleCancel={handleCancel}
+      />
+
       <Row>
-        <Col span={20}>
-          <Title level={2}>{userData?.logName}</Title>
+        <Col span={18}>
+          <div
+            style={{
+              display: "flex",
+            }}
+          >
+            <Avatar
+              size={70}
+              src={userData?.imgProfile || ""}
+              style={{
+                marginRight: 10,
+              }}
+            />
+
+            <Title level={2}>{userData?.logName}</Title>
+          </div>
           <Text>Vous travaillez sur le bureau: </Text>
           <Text type="success"> {userData?.desk} </Text>
         </Col>
 
-        <Col span={4} align="right">
+        <Col span={2} align="right">
           <Button shape="round" type="danger" onClick={signout}>
             <CloseCircleOutlined />
             Sortir
+          </Button>
+        </Col>
+
+        <Col
+          style={{
+            marginLeft: 20,
+          }}
+          span={2}
+          align="right"
+        >
+          <Button shape="round" onClick={onOpenModal}>
+            <ProfileOutlined />
+            Update Profile
           </Button>
         </Col>
       </Row>
