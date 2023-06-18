@@ -30,11 +30,44 @@ export const RouterPage = () => {
 
   const [isAdmin, setIsAdmin] = useState(true);
 
-  const signout = async () => {
+  const menuItems = [
+    {
+      key: "1",
+      icon: <UserOutlined />,
+      label: <Link to="/desk">Patients</Link>,
+      shouldShow: true,
+    },
+    {
+      key: "2",
+      icon: <VideoCameraOutlined />,
+      label: <Link to="/line">File d'attente de billets</Link>,
+      shouldShow: true,
+    },
+    {
+      key: "3",
+      icon: <UploadOutlined />,
+      label: <Link to="/create">Créer des billets</Link>,
+      shouldShow: true,
+    },
+    {
+      key: "4",
+      icon: <UsergroupAddOutlined />,
+      label: <Link to="/users">Les Utilisateurs</Link>,
+      shouldShow: isAdmin,
+    },
+    {
+      key: isAdmin ? "6" : "5",
+      icon: <CloseCircleOutlined />,
+      label: <div onClick={signout}>Sortir</div>,
+      shouldShow: isAdmin,
+    },
+  ];
+
+  async function signout() {
     await logout();
 
     window.location.reload();
-  };
+  }
 
   async function init() {
     const user = await getUserProfile();
@@ -51,31 +84,12 @@ export const RouterPage = () => {
       <Layout style={{ minHeight: "100vh" }}>
         <Sider collapsedWidth="0" breakpoint="md" hidden={ocultarMenu}>
           <div className="logo" />
-          <Menu theme="dark" mode="inline" defaultSelectedKeys={["1"]}>
-            <Menu.Item key="1" icon={<UserOutlined />}>
-              <Link to="/desk">Patients</Link>
-            </Menu.Item>
-            <Menu.Item key="2" icon={<VideoCameraOutlined />}>
-              <Link to="/line">File d'attente de billets</Link>
-            </Menu.Item>
-            <Menu.Item key="3" icon={<UploadOutlined />}>
-              <Link to="/create">Créer des billets</Link>
-            </Menu.Item>
-
-            {isAdmin ? (
-              <Menu.Item key="4" icon={<UsergroupAddOutlined />}>
-                <Link to="/users">Les Utilisateurs</Link>
-              </Menu.Item>
-            ) : undefined}
-
-            <Menu.Item
-              onClick={signout}
-              key={isAdmin ? "6" : "5"}
-              icon={<CloseCircleOutlined />}
-            >
-              <div>Sortir</div>
-            </Menu.Item>
-          </Menu>
+          <Menu
+            items={menuItems}
+            theme="dark"
+            mode="inline"
+            defaultSelectedKeys={["2"]}
+          />
         </Sider>
         <Layout className="site-layout">
           <Content

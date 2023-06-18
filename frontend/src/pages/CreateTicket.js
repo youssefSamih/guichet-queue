@@ -41,7 +41,7 @@ export const CreateTicket = () => {
     socket.emit("request-ticket", null, (ticket) => {
       setTicket(ticket);
 
-      printSection();
+      setTimeout(printSection, 30);
     });
   };
 

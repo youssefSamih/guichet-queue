@@ -1,16 +1,23 @@
 export const login = async (email, password) => {
   try {
-    const response = await fetch(`${process.env.REACT_APP_URL_SERVER}/login`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: email,
-        password,
-      }),
-    });
+    const response = await fetch(
+      `${
+        process.env.NODE_ENV !== "production"
+          ? process.env.REACT_APP_URL_SERVER
+          : window.origin.replace(":3000", ":4000")
+      }/login`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: email,
+          password,
+        }),
+      }
+    );
 
     const data = await response.json();
 
@@ -23,7 +30,11 @@ export const login = async (email, password) => {
 export const getAllUsers = async () => {
   try {
     const response = await fetch(
-      `${process.env.REACT_APP_URL_SERVER}/users-list`,
+      `${
+        process.env.NODE_ENV !== "production"
+          ? process.env.REACT_APP_URL_SERVER
+          : window.origin.replace(":3000", ":4000")
+      }/users-list`,
       {
         method: "GET",
         headers: {
@@ -44,7 +55,11 @@ export const getAllUsers = async () => {
 export const getUserProfile = async () => {
   try {
     const response = await fetch(
-      `${process.env.REACT_APP_URL_SERVER}/profile`,
+      `${
+        process.env.NODE_ENV !== "production"
+          ? process.env.REACT_APP_URL_SERVER
+          : window.origin.replace(":3000", ":4000")
+      }/profile`,
       {
         method: "GET",
         headers: {
@@ -54,7 +69,18 @@ export const getUserProfile = async () => {
       }
     );
 
-    return response.json();
+    const data = await response.json();
+
+    return {
+      ...data,
+      imgProfile: data.imgProfile
+        ? `${
+            process.env.NODE_ENV !== "production"
+              ? process.env.REACT_APP_URL_SERVER
+              : window.origin.replace(":3000", ":4000")
+          }${data.imgProfile}`
+        : undefined,
+    };
   } catch (error) {
     return null;
   }
@@ -62,13 +88,20 @@ export const getUserProfile = async () => {
 
 export const logout = async () => {
   try {
-    const response = await fetch(`${process.env.REACT_APP_URL_SERVER}/logout`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${
+        process.env.NODE_ENV !== "production"
+          ? process.env.REACT_APP_URL_SERVER
+          : window.origin.replace(":3000", ":4000")
+      }/logout`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      }
+    );
 
     return response.json();
   } catch (error) {

@@ -8,7 +8,11 @@ export const createUser = async ({ logName, email, password, images }) => {
       formData.append("file", images[0].originFileObj);
 
       const imageUpload = await fetch(
-        `${process.env.REACT_APP_URL_SERVER}/upload`,
+        `${
+          process.env.NODE_ENV !== "production"
+            ? process.env.REACT_APP_URL_SERVER
+            : window.origin.replace(":3000", ":4000")
+        }/upload`,
         {
           method: "POST",
           credentials: "include",
@@ -22,7 +26,11 @@ export const createUser = async ({ logName, email, password, images }) => {
     }
 
     const response = await fetch(
-      `${process.env.REACT_APP_URL_SERVER}/create-user`,
+      `${
+        process.env.NODE_ENV !== "production"
+          ? process.env.REACT_APP_URL_SERVER
+          : window.origin.replace(":3000", ":4000")
+      }/create-user`,
       {
         method: "POST",
         credentials: "include",
@@ -56,7 +64,11 @@ export const updateUser = async (userData) => {
       formData.append("file", userData.images[0].originFileObj);
 
       const imageUpload = await fetch(
-        `${process.env.REACT_APP_URL_SERVER}/upload`,
+        `${
+          process.env.NODE_ENV !== "production"
+            ? process.env.REACT_APP_URL_SERVER
+            : window.origin.replace(":3000", ":4000")
+        }/upload`,
         {
           method: "POST",
           credentials: "include",
@@ -69,14 +81,21 @@ export const updateUser = async (userData) => {
       imgProfile = data.imgUrl;
     }
 
-    const response = await fetch(`${process.env.REACT_APP_URL_SERVER}/user`, {
-      method: "PUT",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ ...userData, imgProfile }),
-    });
+    const response = await fetch(
+      `${
+        process.env.NODE_ENV !== "production"
+          ? process.env.REACT_APP_URL_SERVER
+          : window.origin.replace(":3000", ":4000")
+      }/user`,
+      {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...userData, imgProfile }),
+      }
+    );
 
     const data = await response.json();
 
@@ -89,7 +108,11 @@ export const updateUser = async (userData) => {
 export const deleteUser = async (id) => {
   try {
     const response = await fetch(
-      `${process.env.REACT_APP_URL_SERVER}/user/${id}`,
+      `${
+        process.env.NODE_ENV !== "production"
+          ? process.env.REACT_APP_URL_SERVER
+          : window.origin.replace(":3000", ":4000")
+      }/user/${id}`,
       {
         method: "DELETE",
         credentials: "include",

@@ -35,21 +35,23 @@ export const Line = () => {
 
   useEffect(() => {
     socket.on("ticket-assigned", (assigned) => {
-      // Create a Map to store the latest numero for each desk
       const deskMap = new Map();
 
       // Iterate over the tickets array to find the latest numero for each desk
       for (const assign of assigned) {
-        const { desk, numero } = assign;
-        if (!deskMap.has(desk) || numero > deskMap.get(desk)) {
-          deskMap.set(desk, numero);
+        const { desk, numero, logName, imgProfile } = assign;
+        if (!deskMap.has(desk) || numero > deskMap.get(desk).numero) {
+          deskMap.set(desk, { numero, logName, imgProfile });
         }
       }
 
       // Create an array of unique desk values with the latest numero
-      const uniqueDesks = Array.from(deskMap.entries()).map(
-        ([desk, numero]) => ({ desk, numero })
-      );
+      const uniqueDesks = Array.from(deskMap.entries()).map(([desk, data]) => ({
+        desk,
+        numero: data.numero,
+        logName: data.logName,
+        imgProfile: data.imgProfile,
+      }));
 
       setTickets(uniqueDesks);
     });
@@ -60,7 +62,27 @@ export const Line = () => {
   }, [socket]);
 
   useEffect(() => {
-    getLastTickets().then(setTickets);
+    getLastTickets().then((assigned) => {
+      const deskMap = new Map();
+
+      // Iterate over the tickets array to find the latest numero for each desk
+      for (const assign of assigned) {
+        const { desk, numero, logName, imgProfile } = assign;
+        if (!deskMap.has(desk) || numero > deskMap.get(desk).numero) {
+          deskMap.set(desk, { numero, logName, imgProfile });
+        }
+      }
+
+      // Create an array of unique desk values with the latest numero
+      const uniqueDesks = Array.from(deskMap.entries()).map(([desk, data]) => ({
+        desk,
+        numero: data.numero,
+        logName: data.logName,
+        imgProfile: data.imgProfile,
+      }));
+
+      setTickets(uniqueDesks);
+    });
 
     init();
   }, []);
@@ -108,10 +130,15 @@ export const Line = () => {
                   title={`Ticket No. ${item.numero}`}
                   description={
                     <>
+                      <Avatar
+                        size={70}
+                        src={item?.imgProfile || ""}
+                        style={{ marginRight: 10 }}
+                      />
                       <Text type="secondary">Au bureau: </Text>
-                      <Tag color="magenta"> {item.numero} </Tag>
+                      <Tag color="magenta"> {item.desk} </Tag>
                       <Text type="secondary"> Agent: </Text>
-                      <Tag color="volcano"> {item.agent} </Tag>
+                      <Tag color="volcano"> {item.logName} </Tag>
                     </>
                   }
                 />

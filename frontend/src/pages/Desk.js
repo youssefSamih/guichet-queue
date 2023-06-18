@@ -58,6 +58,13 @@ export const Desk = () => {
       setUserData((prevState) => ({
         ...prevState,
         ...user,
+        imgProfile: user.imgProfile
+          ? `${
+              process.env.NODE_ENV !== "production"
+                ? process.env.REACT_APP_URL_SERVER
+                : window.origin.replace(":3000", ":4000")
+            }${user.imgProfile}`
+          : undefined,
       }));
 
     setIsLoading(false);
@@ -94,7 +101,7 @@ export const Desk = () => {
   async function init() {
     const user = await getUserProfile();
 
-    setHideMenu(user.role !== "admin");
+    setHideMenu(user?.role !== "admin");
 
     setUserData(user);
 
@@ -147,12 +154,12 @@ export const Desk = () => {
           </Button>
         </Col>
 
-        <Col className="update-profile" span={2} align="right">
+        {/* <Col className="update-profile" span={2} align="right">
           <Button shape="round" onClick={onOpenModal}>
             <ProfileOutlined />
             Update Profile
           </Button>
-        </Col>
+        </Col> */}
       </Row>
 
       <Divider />
