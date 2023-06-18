@@ -35,7 +35,7 @@ class Photos {
       return {
         code: SUCCESS_RES,
         value: {
-          imgUrl: `http://localhost:4000/file/${image._id}`,
+          imgUrl: `/file/${image._id}`,
         },
       };
     } catch (error) {

@@ -21,17 +21,16 @@ class Sockets {
       });
 
       socket.on("next-ticket-work", (userData, callback) => {
+        if (!userData) {
+          callback(null);
+          return;
+        }
+
         const suTicket = this.ticketList.assignTicket(userData);
 
         callback(suTicket);
 
-        this.io.emit(
-          "ticket-assigned",
-          this.ticketList.lastTickets.map((ticket) => ({
-            ...ticket,
-            logName: userData?.logName,
-          }))
-        );
+        this.io.emit("ticket-assigned", this.ticketList.lastTickets);
       });
     });
   }

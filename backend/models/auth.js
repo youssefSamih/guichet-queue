@@ -144,8 +144,8 @@ class Auth {
     const deskNumbersAssigned = this.loggedUsers.map((usr) => usr.desk);
 
     const totalDeskNumbers = Array.from(
-      String(process.env.TOTAL_DESKS),
-      Number
+      { length: parseInt(process.env.TOTAL_DESKS) },
+      (_, index) => index + 1
     );
 
     const filteredArrayDesk = totalDeskNumbers.filter(
@@ -318,6 +318,12 @@ class Auth {
         errors: [{ name: "userInExist", errors: [ERRORS.userInExist] }],
       };
     }
+  }
+
+  logout(id) {
+    const users = this.loggedUsers.filter((user) => user.id === id);
+
+    this.loggedUsers = users;
   }
 }
 

@@ -16,7 +16,6 @@ const Sockets = require("./sockets");
 const Auth = require("./auth");
 const User = require("./user");
 const Photos = require("./photos");
-const Image = require("./image-schema");
 
 const mongoString = process.env.DB;
 mongoose.connect(mongoString);
@@ -34,7 +33,23 @@ class Server {
 
     // socket configurations
     this.io = socketio(this.server, {
-      origin: process.env.ORIGIN_CLIENT,
+      origin: (origin, callback) => {
+        // Get the local IP address of the machine
+        const ipAddress = this.server.address().address;
+
+        // Set the allowed origins based on the local IP address or "localhost"
+        const allowedOrigins = [
+          `http://${ipAddress}:3000`,
+          process.env.ORIGIN_CLIENT,
+        ];
+
+        // Check if the request's origin is allowed
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback("Not allowed by Socket.IO");
+        }
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE"],
     });
@@ -73,10 +88,34 @@ class Server {
     // Middleware to parse URL-encoded bodies
     this.app.use(express.urlencoded({ extended: true }));
 
+    const dynamicCors = (req, res, next) => {
+      // Get the local IP address of the machine
+      const ipAddress = req.connection.localAddress;
+
+      // Set the allowed origin based on the local IP address
+      const allowedOrigin = [
+        `http://${ipAddress}:3000`,
+        process.env.ORIGIN_CLIENT,
+      ];
+
+      // Check if the request's origin is allowed
+      const requestOrigin = req.headers.origin;
+      if (allowedOrigin.includes(requestOrigin)) {
+        // Set the Access-Control-Allow-Origin header
+        res.header("Access-Control-Allow-Origin", requestOrigin);
+      }
+
+      // Continue to the next middleware
+      next();
+    };
+
+    // Add the dynamic CORS middleware
+    this.app.use(dynamicCors);
+
     // Configure cors
     this.app.use(
       cors({
-        origin: process.env.ORIGIN_CLIENT,
+        origin: true,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE"],
       })
@@ -162,6 +201,8 @@ class Server {
     });
 
     this.app.post("/logout", (req, res) => {
+      this.auth.logout(req.user_id);
+
       req.logout((err) => {
         if (err) return next(err);
 
@@ -176,7 +217,10 @@ class Server {
     });
 
     this.app.post("/upload", upload.single("file"), async (req, res) => {
-      const uploadedFile = await this.photos.uploadImage(req.file);
+      const uploadedFile = await this.photos.uploadImage(
+        req.file,
+        req.connection.localAddress
+      );
 
       return res
         .status(uploadedFile.code)
@@ -189,15 +233,15 @@ class Server {
       image.errors && res.status(image.code).json(image.errors);
 
       image.value &&
-        res.status(image.code).sendFile(path.join(__dirname, `../${image.value.path}`));
+        res
+          .status(image.code)
+          .sendFile(path.join(__dirname, `../${image.value.path}`));
     });
 
     this.app.delete("/file/:id", async (req, res) => {
       const file = await this.photos.deleteImage(req.params.id);
 
-      console.log(file);
-
-      res.status(file.code).json({});
+      res.status(file.code).json(file.errors || file.value);
     });
   }
 

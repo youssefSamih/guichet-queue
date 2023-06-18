@@ -4,8 +4,6 @@ const Ticket = require("./ticket");
 
 const TicketModel = require("./ticket-schema");
 
-// const ticketJsonData = require("../data/ticket-data.json");
-
 class TicketList {
   constructor() {
     this.lastNumber = 0;
