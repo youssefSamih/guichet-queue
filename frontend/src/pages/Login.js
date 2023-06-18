@@ -92,6 +92,8 @@ export const Login = () => {
 
   useEffect(() => {
     init();
+
+    // eslint-disable-next-line
   }, []);
 
   return (

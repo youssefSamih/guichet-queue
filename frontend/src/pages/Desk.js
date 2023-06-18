@@ -119,7 +119,7 @@ export const Desk = () => {
         handleCancel={handleCancel}
       />
 
-      <Row>
+      <Row className="desk">
         <Col span={18}>
           <div
             style={{
@@ -147,13 +147,7 @@ export const Desk = () => {
           </Button>
         </Col>
 
-        <Col
-          style={{
-            marginLeft: 20,
-          }}
-          span={2}
-          align="right"
-        >
+        <Col className="update-profile" span={2} align="right">
           <Button shape="round" onClick={onOpenModal}>
             <ProfileOutlined />
             Update Profile
@@ -175,7 +169,7 @@ export const Desk = () => {
       )}
 
       <Row>
-        <Col offset={18} span={6} align="right">
+        <Col className="next-button" offset={18} span={6} align="right">
           <Button onClick={nextTicket} shape="round" type="primary">
             <RightOutlined />
             Suivant
