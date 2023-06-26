@@ -125,7 +125,7 @@ export const Login = () => {
             className="input-container"
             rules={[{ required: true, message: errors.pass }]}
           >
-            <Input />
+            <Input type="password" />
           </Form.Item>
 
           <Form.Item className="button-container">

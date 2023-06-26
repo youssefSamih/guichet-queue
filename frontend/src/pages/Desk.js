@@ -1,10 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Row, Col, Typography, Button, Divider, Form, Avatar } from "antd";
-import {
-  CloseCircleOutlined,
-  RightOutlined,
-  ProfileOutlined,
-} from "@ant-design/icons";
+import { CloseCircleOutlined, RightOutlined } from "@ant-design/icons";
 import { Redirect, useHistory } from "react-router-dom";
 
 import { SocketContext } from "../context/SocketContext";
@@ -85,18 +81,6 @@ export const Desk = () => {
       setTicket(ticket);
     });
   };
-
-  function onOpenModal() {
-    if (!userData) return;
-
-    form.setFieldsValue({
-      username: userData.logName,
-      email: userData.username,
-      image: undefined,
-    });
-
-    setIsModalOpen(true);
-  }
 
   async function init() {
     const user = await getUserProfile();
