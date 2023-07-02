@@ -21,7 +21,22 @@ export const CreateTicket = () => {
     const printWindow = window.open("", "_blank");
     printWindow.document.write("<html><head><title>Print</title>");
     printWindow.document.write(
-      "<style>@media print { @page { size: A5; } div { margin-top: 200px; transform: scale(2); } }</style>"
+      `<style>@media print {
+        @page {
+          size: 72mm 72mm; /* Set the size in millimeters */
+          margin: 0; /* Remove default margins */
+        }
+        body {
+          width: 72mm;
+          height: 72mm;
+          margin: 0; /* Remove default margins */
+          font-family: Arial, sans-serif; /* Use a compatible font */
+        }
+        div {
+          margin-top: 10mm; /* Adjust the top margin as needed */
+          transform: scale(1); /* Reset the scaling */
+        }
+      }</style>`
     );
     printWindow.document.write("</head><body>");
     printWindow.document.write('<div style="padding: 20px;">');
