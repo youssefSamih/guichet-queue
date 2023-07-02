@@ -18,6 +18,7 @@ const User = require("./user");
 const Photos = require("./photos");
 
 const mongoString = process.env.DB;
+const mongoConnection = mongoose.connect(mongoString);
 
 class Server {
   constructor() {
@@ -274,7 +275,7 @@ class Server {
 
     // Initialize Server
     this.server.listen(this.port, async () => {
-      await mongoose.connect(mongoString, async () => {
+      mongoConnection.then(async () => {
         await this.createAdminUser();
 
         console.log("Server running on port:", this.port);
