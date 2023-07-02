@@ -18,7 +18,6 @@ const User = require("./user");
 const Photos = require("./photos");
 
 const mongoString = process.env.DB;
-mongoose.connect(mongoString);
 
 class Server {
   constructor() {
@@ -275,9 +274,11 @@ class Server {
 
     // Initialize Server
     this.server.listen(this.port, async () => {
-      await this.createAdminUser();
+      await mongoose.connect(mongoString, async () => {
+        await this.createAdminUser();
 
-      console.log("Server running on port:", this.port);
+        console.log("Server running on port:", this.port);
+      });
     });
   }
 }
