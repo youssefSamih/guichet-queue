@@ -104,3 +104,18 @@ iframe {
     margin-left: 0;
   }
 }
+
+.list-group .ant-list-items {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.list-group .ant-spin-container:after {
+  display: none;
+}
+
+.list-group .ant-list-item {
+  border-bottom: unset;
+}

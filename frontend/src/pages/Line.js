@@ -1,23 +1,13 @@
 import React, { useContext, useEffect, useState } from "react";
 
-import {
-  Col,
-  Row,
-  Typography,
-  List,
-  Card,
-  Tag,
-  Divider,
-  Avatar,
-  Space,
-} from "antd";
+import { Typography, List, Card, Tag, Avatar, Space } from "antd";
 
 import { SocketContext } from "../context/SocketContext";
 import { useHideMenu } from "../hooks/useHideMenu";
 import { getLastTickets } from "../helpers/getLastTickets";
 import { getUserProfile } from "../helpers/auth";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export const Line = () => {
   const [hideMenu, setHideMenu] = useState(false);
@@ -90,63 +80,34 @@ export const Line = () => {
   return (
     <>
       <Title level={1}>Servir le client</Title>
-      <Row>
-        <Col span={12}>
-          <List
-            dataSource={tickets.slice(0, 3)}
-            renderItem={(item) => {
-              return (
-                <List.Item>
-                  <Card
-                    style={{ width: 300, marginTop: 16 }}
-                    actions={[
-                      <Tag color="volcano"> {item.logName} </Tag>,
-                      <Tag color="magenta"> Bureau: {item.desk} </Tag>,
-                    ]}
-                  >
-                    <Space wrap size={16}>
-                      <Avatar
-                        size={70}
-                        src={item?.imgProfile || ""}
-                        style={{ marginRight: 10 }}
-                      />
 
-                      <Title> No. {item.numero}</Title>
-                    </Space>
-                  </Card>
-                </List.Item>
-              );
-            }}
-          />
-        </Col>
+      <List
+        className="list-group"
+        dataSource={tickets}
+        renderItem={(item) => {
+          return (
+            <List.Item>
+              <Card
+                style={{ width: 300, marginTop: 16 }}
+                actions={[
+                  <Tag color="volcano"> {item.logName} </Tag>,
+                  <Tag color="magenta"> Bureau: {item.desk} </Tag>,
+                ]}
+              >
+                <Space wrap size={16}>
+                  <Avatar
+                    size={70}
+                    src={item?.imgProfile || ""}
+                    style={{ marginRight: 10 }}
+                  />
 
-        <Col span={12}>
-          <Divider> Enregistrer </Divider>
-          <List
-            dataSource={tickets.slice(3)}
-            renderItem={(item) => (
-              <List.Item>
-                <List.Item.Meta
-                  title={`Ticket No. ${item.numero}`}
-                  description={
-                    <>
-                      <Avatar
-                        size={70}
-                        src={item?.imgProfile || ""}
-                        style={{ marginRight: 10 }}
-                      />
-                      <Text type="secondary">Au bureau: </Text>
-                      <Tag color="magenta"> {item.desk} </Tag>
-                      <Text type="secondary"> Agent: </Text>
-                      <Tag color="volcano"> {item.logName} </Tag>
-                    </>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        </Col>
-      </Row>
+                  <Title> No. {item.numero}</Title>
+                </Space>
+              </Card>
+            </List.Item>
+          );
+        }}
+      />
     </>
   );
 };
